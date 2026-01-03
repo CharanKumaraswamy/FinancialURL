@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial News Dashboard</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Light Mode Variables (Default) */
+            --bg-color: #FFFFFF;
+            --text-color: #000000;
+            --border-color: #E5E5E5;
+            --hover-bg: #F5F5F5;
+            --sub-bg: #FAFAFA; /* Slightly different for open folders */
+            --input-bg: #FFFFFF;
+            --secondary-text: #666666;
+            --badge-bg: #EEEEEE;
+        }
+
+        body.dark-mode {
+            /* Dark Mode Variables */
+            --bg-color: #000000;
+            --text-color: #FFFFFF;
+            --border-color: #333333;
+            --hover-bg: #1A1A1A;
+            --sub-bg: #0F0F0F;
+            --input-bg: #000000;
+            --secondary-text: #AAAAAA;
+            --badge-bg: #222222;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        /* Sticky Navigation Header */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background-color: var(--bg-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 20px;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            backdrop-filter: blur(10px); 
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        body:not(.dark-mode) header {
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+        body.dark-mode header {
+            background-color: rgba(0, 0, 0, 0.95);
+        }
+
+        .header-content {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.03em;
+        }
+
+        /* Toggle Button */
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+            fill: none;
+            stroke: currentColor;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Search Input */
+        .search-wrapper {
+            position: relative;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 12px 16px;
+            padding-left: 40px;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #search-input:focus {
+            border-color: var(--text-color);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            color: var(--secondary-text);
+            pointer-events: none;
+        }
+
+        /* List Styling */
+        main {
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+            padding-bottom: 60px;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        /* Common Link/Item Styles */
+        .link-item {
+            border-bottom: 1px solid var(--border-color);
+            transition: border-color 0.3s ease;
+        }
+        
+        /* Remove border from last item if it's not expanded */
+        .link-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            text-decoration: none;
+            color: var(--text-color);
+            background-color: transparent;
+            transition: background-color 0.2s;
+            cursor: pointer;
+            width: 100%;
+            border: none;
+            font-family: inherit;
+            text-align: left;
+        }
+
+        .item-content:hover {
+            background-color: var(--hover-bg);
+        }
+
+        /* Group/Folder specific overrides */
+        .group-header {
+            /* Styles for the folder toggler */
+        }
+        
+        .sub-list {
+            display: none; /* Hidden by default */
+            background-color: var(--sub-bg);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .sub-list.open {
+            display: block;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sub-item .item-content {
+            padding-left: 36px; /* Indent sub-items */
+            padding-top: 16px;
+            padding-bottom: 16px;
+            font-size: 15px;
+            border-top: 1px solid var(--border-color); /* Separators inside folder */
+        }
+        
+        .sub-item:first-child .item-content {
+            border-top: none;
+        }
+
+        /* Typography */
+        .link-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .link-title {
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .link-domain {
+            font-size: 12px;
+            color: var(--secondary-text);
+        }
+
+        .count-badge {
+            font-size: 12px;
+            background-color: var(--badge-bg);
+            color: var(--secondary-text);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        /* Icons */
+        .chevron {
+            width: 20px;
+            height: 20px;
+            color: var(--text-color);
+            opacity: 0.3;
+            transition: transform 0.3s ease, opacity 0.2s;
+        }
+
+        .item-content:hover .chevron {
+            opacity: 1;
+        }
+
+        /* Rotation for open folders */
+        .group-container.expanded .group-header .chevron {
+            transform: rotate(90deg);
+            opacity: 1;
+        }
+
+        /* Rotation for flat links on hover */
+        .link-item:not(.group-container) .item-content:hover .chevron {
+            transform: translateX(2px);
+        }
+        .sub-item .item-content:hover .chevron {
+            transform: translateX(2px);
+        }
+
+        /* Empty State */
+        .no-results {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--secondary-text);
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            <div class="top-bar">
+                <h1>Market Dashboard</h1>
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle Dark Mode">
+                    <svg id="icon-sun" style="display:none;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <svg id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="search-wrapper">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="search-input" placeholder="Search markets, stocks, news...">
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <ul id="link-list">
+            <!-- Content injected via JS -->
+        </ul>
+        <div class="no-results" id="no-results">No links found.</div>
+    </main>
+
+    <script>
+        // --- Data ---
+        const rawLinks = [
+            { title: "Financial Express", url: "https://www.financialexpress.com/" },
+            { title: "Business Standard", url: "https://www.business-standard.com/" },
+            { title: "Moneycontrol: Real Estate", url: "https://www.moneycontrol.com/real-estate-property/" },
+            { title: "Moneycontrol: Companies", url: "https://www.moneycontrol.com/news/business/companies/" },
+            { title: "Moneycontrol: Business News", url: "https://www.moneycontrol.com/news/business/" },
+            { title: "Moneycontrol: Markets", url: "https://www.moneycontrol.com/news/business/markets/" },
+            { title: "Moneycontrol: Stocks", url: "https://www.moneycontrol.com/news/business/stocks/" },
+            { title: "Moneycontrol: Economy", url: "https://www.moneycontrol.com/news/business/economy/" },
+            { title: "Moneycontrol: Trends", url: "https://www.moneycontrol.com/news/trends/" },
+            { title: "Moneycontrol: IPO", url: "https://www.moneycontrol.com/news/business/ipo/" },
+            { title: "Moneycontrol: Opinion", url: "https://www.moneycontrol.com/news/opinion/" },
+            { title: "Moneycontrol: Personal Finance", url: "https://www.moneycontrol.com/news/business/personal-finance/" },
+            { title: "Moneycontrol: Startups", url: "https://www.moneycontrol.com/news/business/startup/" },
+            { title: "Moneycontrol: Earnings", url: "https://www.moneycontrol.com/news/business/earnings/" },
+            { title: "Moneycontrol: Equity Research", url: "https://www.moneycontrol.com/equity-research/" },
+            { title: "Moneycontrol: Explainers", url: "https://www.moneycontrol.com/explainers/" },
+            { title: "Moneycontrol: Fintech", url: "https://www.moneycontrol.com/news/fintech/" },
+            { title: "Zerodha Pulse", url: "https://pulse.zerodha.com/" },
+            { title: "Times of India", url: "https://timesofindia.indiatimes.com/" },
+            { title: "Reuters Markets", url: "https://www.reuters.com/markets/" },
+            { title: "Bloomberg Asia", url: "https://www.bloomberg.com/asia" },
+            { title: "The Hindu Business", url: "https://www.thehindu.com/business/" },
+            { title: "Finshots Markets", url: "https://finshots.in/markets/" },
+            { title: "Financial Times", url: "https://www.ft.com/" },
+            { title: "Economic Times", url: "https://economictimes.indiatimes.com/" },
+            { title: "CNBC TV18", url: "https://www.cnbctv18.com/" },
+            { title: "Investing.com Popular", url: "https://in.investing.com/news/most-popular-news" },
+            { title: "Financial Express", url: "https://www.financialexpress.com/" }
+        ];
+
+        // Deduplicate
+        const links = rawLinks.filter((v,i,a)=>a.findIndex(t=>(t.url === v.url))===i);
+
+        // --- DOM Elements ---
+        const listContainer = document.getElementById('link-list');
+        const searchInput = document.getElementById('search-input');
+        const noResults = document.getElementById('no-results');
+        const themeToggle = document.getElementById('theme-toggle');
+        const iconSun = document.getElementById('icon-sun');
+        const iconMoon = document.getElementById('icon-moon');
+
+        // --- Helpers ---
+        function getHostname(url) {
+            try { return new URL(url).hostname.replace('www.', ''); } catch(e) { return ''; }
+        }
+
+        // Returns a "clean" name for the group (Main Domain)
+        function getGroupName(url) {
+            const host = getHostname(url);
+            if (host.includes('moneycontrol')) return 'Moneycontrol';
+            if (host.includes('business-standard')) return 'Business Standard';
+            if (host.includes('financialexpress')) return 'Financial Express';
+            if (host.includes('indiatimes')) {
+                if(host.includes('timesofindia')) return 'Times of India';
+                if(host.includes('economictimes')) return 'Economic Times';
+            }
+            // Fallback: capitalize first letter of domain
+            const main = host.split('.')[0];
+            return main.charAt(0).toUpperCase() + main.slice(1);
+        }
+
+        // Logic to open internal links in same tab, external in new
+        function getTarget(url) {
+            try {
+                return new URL(url).hostname === window.location.hostname ? '_self' : '_blank';
+            } catch(e) { return '_blank'; }
+        }
+
+        // Group the data
+        function getGroupedData() {
+            const groups = {};
+            links.forEach(link => {
+                const groupName = getGroupName(link.url);
+                if (!groups[groupName]) {
+                    groups[groupName] = {
+                        domain: getHostname(link.url),
+                        links: []
+                    };
+                }
+                groups[groupName].links.push(link);
+            });
+            return groups; // Object { "Moneycontrol": { domain:..., links: [...] }, ... }
+        }
+
+        // --- Rendering ---
+
+        // Render standard Chevron SVG
+        const chevronSvg = `<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+
+        // 1. Render Grouped View (Default)
+        function renderGrouped() {
+            listContainer.innerHTML = '';
+            noResults.style.display = 'none';
+            const grouped = getGroupedData();
+
+            // Convert to array and sort alphabetically by Group Name
+            const sortedGroups = Object.entries(grouped).sort((a, b) => a[0].localeCompare(b[0]));
+
+            sortedGroups.forEach(([groupName, data]) => {
+                const groupLinks = data.links;
+                const li = document.createElement('li');
+                
+                // If only 1 link, render as direct link
+                if (groupLinks.length === 1) {
+                    const link = groupLinks[0];
+                    li.className = 'link-item';
+                    li.innerHTML = `
+                        <a href="${link.url}" target="${getTarget(link.url)}" class="item-content">
+                            <div class="link-text">
+                                <span class="link-title">${link.title}</span>
+                                <span class="link-domain">${data.domain}</span>
+                            </div>
+                            ${chevronSvg}
+                        </a>
+                    `;
+                } 
+                // If multiple links, render as Folder/Accordion
+                else {
+                    li.className = 'link-item group-container';
+                    
+                    // Create folder header
+                    const button = document.createElement('button');
+                    button.className = 'item-content group-header';
+                    button.innerHTML = `
+                        <div class="link-text">
+                            <span class="link-title">
+                                ${groupName} 
+                                <span class="count-badge">${groupLinks.length}</span>
+                            </span>
+                            <span class="link-domain">${data.domain}</span>
+                        </div>
+                        ${chevronSvg}
+                    `;
+
+                    // Create sub-list
+                    const subUl = document.createElement('ul');
+                    subUl.className = 'sub-list';
+
+                    groupLinks.forEach(link => {
+                        // Clean the title (remove "Moneycontrol: " prefix if present)
+                        let cleanTitle = link.title;
+                        const prefix = groupName + ': ';
+                        if (cleanTitle.startsWith(prefix)) {
+                            cleanTitle = cleanTitle.substring(prefix.length);
+                        } else if (cleanTitle.startsWith(groupName)) {
+                             // Handle cases like "Moneycontrol Markets" -> "Markets"
+                            cleanTitle = cleanTitle.replace(groupName, '').trim();
+                        }
+
+                        const subLi = document.createElement('li');
+                        subLi.className = 'sub-item';
+                        subLi.innerHTML = `
+                            <a href="${link.url}" target="${getTarget(link.url)}" class="item-content">
+                                <span class="link-title">${cleanTitle}</span>
+                                ${chevronSvg}
+                            </a>
+                        `;
+                        subUl.appendChild(subLi);
+                    });
+
+                    // Toggle Logic
+                    button.addEventListener('click', () => {
+                        const isExpanded = li.classList.contains('expanded');
+                        if (isExpanded) {
+                            li.classList.remove('expanded');
+                            subUl.classList.remove('open');
+                        } else {
+                            li.classList.add('expanded');
+                            subUl.classList.add('open');
+                        }
+                    });
+
+                    li.appendChild(button);
+                    li.appendChild(subUl);
+                }
+
+                listContainer.appendChild(li);
+            });
+        }
+
+        // 2. Render Flat View (Search Results)
+        function renderFlat(filterText) {
+            listContainer.innerHTML = '';
+            const lowerFilter = filterText.toLowerCase();
+
+            const matches = links.filter(link => 
+                link.title.toLowerCase().includes(lowerFilter) || 
+                link.url.toLowerCase().includes(lowerFilter)
+            );
+
+            if (matches.length === 0) {
+                noResults.style.display = 'block';
+                return;
+            } else {
+                noResults.style.display = 'none';
+            }
+
+            matches.forEach(link => {
+                const li = document.createElement('li');
+                li.className = 'link-item';
+                li.innerHTML = `
+                    <a href="${link.url}" target="${getTarget(link.url)}" class="item-content">
+                        <div class="link-text">
+                            <span class="link-title">${link.title}</span>
+                            <span class="link-domain">${getHostname(link.url)}</span>
+                        </div>
+                        ${chevronSvg}
+                    </a>
+                `;
+                listContainer.appendChild(li);
+            });
+        }
+
+        // --- Event Listeners ---
+
+        searchInput.addEventListener('input', (e) => {
+            const val = e.target.value.trim();
+            if (val.length > 0) {
+                renderFlat(val);
+            } else {
+                renderGrouped();
+            }
+        });
+
+        // Theme Logic
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            
+            if (isDark) {
+                iconMoon.style.display = 'none';
+                iconSun.style.display = 'block';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                iconMoon.style.display = 'block';
+                iconSun.style.display = 'none';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            toggleTheme();
+        } else if (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            toggleTheme();
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // Initial Render
+        renderGrouped();
+
+    </script>
+</body>
+</html>
